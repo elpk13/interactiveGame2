@@ -1,0 +1,5 @@
+Parameter     | Value | Commentary
+window_height | 900   | int
+window_width  | 1200  | int
+frame_time    | 100   | int in milliseconds
+frames_in_day | 300   | int 
