@@ -166,3 +166,28 @@ def addAnimal(world, animalGraphics):
     world.animals.append(newAnimal)
     world.objectsofheight.append(newAnimal)
     world.interactives.append(newAnimal)
+
+def drawHuntScreen(screen,width,height,characterappearance,playerx,playery,borders,huntworld,ybaselist,time,night,health,currentmode,currentframe):
+    ybaselist = getYbaselist(huntworld.objectsofheight) # Recalculate each time?  Oh well.
+    leftx, topy = borders[0], borders[2]
+    # Get player, use to find which objects to blit above and below.
+    playerimage = characterappearance[currentmode][currentframe]
+    ydiff = playerimage.get_height()//2
+    middleob = bisect.bisect(ybaselist,playery+ydiff)
+    # Blit correct background
+    screen.blit(huntworld.background,(0,0))
+    # Everything else takes night as a variable.
+    for stream in huntworld.streams:
+        drawStream(screen,stream,playerx,playery,width,height,time,night,False,leftx,topy)
+    for o in range(0,middleob):
+        huntworld.objectsofheight[o].draw(screen,playerx,playery,width,height,night,time,False,borders[0],borders[2])
+    screen.blit(playerimage,(int(playerx-playerimage.get_width()/2-leftx),int(playery-playerimage.get_height()/2-topy)))
+    for o in range(middleob,len(huntworld.objectsofheight)):
+        huntworld.objectsofheight[o].draw(screen,playerx,playery,width,height,night,time,False,borders[0],borders[2])
+    # Health bar
+    healthBarRect = pygame.Rect(int(5*width/6 - height/24),int(11*height/12),int(width*health/600),int(height/24))
+    healthBarOutline = pygame.Rect(int(5*width/6 - height/24 - width/300),int(11*height/12 - width/300),int(width/6 + width/150),int(height/24 + width/150))
+    pygame.draw.rect(screen,(255,255,255),healthBarOutline)
+    pygame.draw.rect(screen,(255,0,0),healthBarRect)
+    # Only drawScreen() can update the display.
+    pygame.display.update()
