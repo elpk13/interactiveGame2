@@ -145,20 +145,27 @@ class Print(Interactive): # Appearance should come from dictionary
         super().__init__(xpos,ypos,height,width,False,appearance,appearance)
 
 class Animal(Interactive): # *Every* animal should be a member of a subclass.
-    def __init__(self,xpos,ypos,height,width,appearance,species,speed):
+    def __init__(self,xpos,ypos,height,width,appearance,species,speed,strength):
         self.species = species
         self.speed = speed # Found in the initialization of the subclass.
+        self.maxspeed = speed
+        self.strength = strength
+        self.maxstrength = strength
         self.currentmode = 0
         self.currentframe = 0
         self.health = 100
+        self.dead = False
         super().__init__(xpos,ypos,height,width,True,appearance,appearance)
         self.ybase = ypos + height/2 # Co-ordinates of animals are different.
+
+    def __str__(self):
+        return self.species
 
     # Animals' x-positions and y-positions are unique in that they refer to the
     # center of the animal and not the upper left corner.  As such, they intersect
     # via a different method.
     def covers(self,possiblex,possibley):
-        if self.xpos - self.width/2 < possiblex < self.xpos + self.width/2 and self.ypos - self.height/2 < possibley < self.ypos + self.height/2:
+        if self.xpos - self.width/3 < possiblex < self.xpos + self.width/3 and self.ypos - self.height/3 < possibley < self.ypos + self.height/3:
             return True
         return False
 
@@ -178,6 +185,30 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
         else:
             screen.blit(appearance,(self.xpos-self.width/2-leftx,self.ypos-self.height/2-topy))
 
+    def orient(self,direction): # Figure out orientation (currentmode) from direction.
+        if direction == -1:
+            return 0
+        while direction < 0:
+            direction += 2*math.pi
+        while direction > 2*math.pi:
+            direction -= 2*math.pi
+        if direction < math.pi/4: # Direction is counterclockwise from east.
+            return 0
+        elif direction < 3*math.pi/4:
+            return 3
+        elif direction < 5*math.pi/4:
+            return 1
+        elif direction < 7*math.pi/4:
+            return 2
+        else:
+            return 0
+
+    def framepush(self):
+        if self.currentframe == len(self.appearance[self.currentmode]) - 1:
+            self.currentframe = 0
+        else:
+            self.currentframe += 1
+
     def move(self,obstacles,animals,direction=135): # A default movement method, wherein "direction"
         directionr = direction*math.pi/180 # is degrees counterclockwise from east.
         newx = self.xpos + self.speed*math.cos(directionr) # Recall that positive
@@ -187,38 +218,104 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
             directionr = direction*math.pi/180
             newx = self.xpos + self.speed*math.cos(directionr) # Recall that positive
             newy = self.ypos - self.speed*math.sin(directionr) # y is southwards.
-        if direction <= 45 or direction >= 315: # Direction might later be calculated and this repeated.
-            self.currentmode = 0
-        elif direction >= 135 and direction <= 225:
-            self.currentmode = 1
-        elif direction < 180:
-            self.currentmode = 2
-        else:
-            self.currentmode = 3
-        if self.currentframe == len(self.appearance[self.currentmode]) - 1:
-            self.currentframe = 0
-        else:
-            self.currentframe += 1
+        self.currentmode = self.orient(directionr)
+        self.framepush()
         self.xpos = newx
         self.ypos = newy # Do not call draw - the drawScreen will do that.
         self.ybase = newy + self.height
 
 class Rabbit(Animal): # Animals' subclasses should - but do not yet - have unique
     def __init__(self,xpos,ypos,height,width,appearance): # move methods.
-        super().__init__(xpos,ypos,height,width,appearance,'rabbit',20)
+        super().__init__(xpos,ypos,height,width,appearance,'rabbit',20,0)
+
+    def safe(self,obstacles,animals,direction): # For a rabbit, a direction is
+        newx = self.xpos + 4*self.speed*math.cos(direction) # acceptable if no
+        newy = self.ypos - 4*self.speed*math.sin(direction) # obstacles a jump away
+        if not self.posok(newx,newy,obstacles): # and no non-rabbits in that
+            return False                        # direction.
+        for animal in animals:
+            if not isinstance(animal,Rabbit):
+                enemydir = math.atan2(self.ypos-animal.ypos,animal.xpos-self.xpos)
+                if -0.5 < enemydir - direction < 0.5:
+                    return False
+        return True
+
+    def move(self,obstacles,animals):
+        # Rabbits will bounce in random directions, never toward other animals
+        # or into obstacles.  They change directions every time they cycle
+        # through their frames.
+        if self.currentframe == len(self.appearance[self.currentmode]) - 1:
+            direction = random.random()*2*math.pi
+            attempts = 0
+            while not self.safe(obstacles,animals,direction) and attempts < 6:
+                direction = random.random()*2*math.pi
+                attempts += 1
+            if attempts == 6:
+                direction = -1 # If rabbit cannot find safe direction, no motion.
+        if direction != -1:
+            self.xpos += self.speed*math.cos(direction)
+            self.ypos -= self.speed*math.sin(direction)
+            self.ybase = self.ypos + self.height
+            self.currentmode = self.orient(direction)
+        self.framepush()
 
 class Deer(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):
-        super().__init__(xpos,ypos,height,width,appearance,'deer',40)
+        self.direction = 0
+        super().__init__(xpos,ypos,height,width,appearance,'deer',40,30)
 
 class Bison(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):
-        super().__init__(xpos,ypos,height,width,appearance,'bison',50)
+        super().__init__(xpos,ypos,height,width,appearance,'bison',50,100)
 
 class Wolf(Animal): # Consider making part of a general animal class for the hunting game?
     def __init__(self,xpos,ypos,height,width,appearance,name):
         self.name = name
-        super().__init__(xpos,ypos,height,width,appearance,'wolf',40)
+        super().__init__(xpos,ypos,height,width,appearance,'wolf',40,45)
+
+    def identify(self,animals): # Wolves can tell predators from prey based on
+        prey = []               # current strength, which enables them to
+        predators = []          # scavenge.
+        for animal in animals:
+            if animal.species != 'wolf':
+                if animal.strength > self.strength:
+                    predators.append(animal)
+                else:
+                    prey.append(animal)
+        return predators, prey
+
+    def move(self,obstacles,animals):
+        predators, prey = self.identify(animals)
+        if len(predators) > 0: # If predators around, avoid all.
+            directions_to_avoid = []
+            for predator in predators:
+                directions_to_avoid.append(math.atan2(self.ypos-predator.ypos,predator.xpos-self.xpos))
+            if len(directions_to_avoid) == 1: # If one predator, run away.
+                direction = directions_to_avoid[0] + math.pi
+            else:
+                directions_to_avoid.sort() # Otherwise, middle of the widest gap between predators.
+                directions_to_avoid.append(directions_to_avoid[0]+2*math.pi)
+                gaps = []
+                for d in range(len(directions_to_avoid)-1):
+                    gaps.append(directions_to_avoid[d+1]-directions_to_avoid[d])
+                choice = gaps.index(max(gaps))
+                direction = directions_to_avoid[choice] + gaps[choice]/2
+        elif len(prey) > 0: # If there are prey, aim for the closest.
+            distances = []
+            for eachprey in prey:
+                distances.append((self.xpos-eachprey.xpos)**2+(self.ypos-eachprey.ypos)**2) # Do not take root - just comparing.
+            choice = prey[distances.index(min(distances))]
+            direction = math.atan2(self.ypos-choice.ypos,choice.xpos-self.xpos)
+        else: # If only other wolves, head north.
+            direction = math.pi/2
+        newx, newy = self.xpos + self.speed*math.cos(direction), self.ypos - self.speed*math.sin(direction)
+        while not self.posok(newx,newy,obstacles):
+            direction += 0.1
+            newx, newy = self.xpos + self.speed*math.cos(direction), self.ypos - self.speed*math.sin(direction)
+        self.xpos, self.ypos = newx, newy
+        self.currentmode = self.orient(direction)
+        self.framepush()
+
 
 class World:
     def __init__(self,worldx,worldy,background,nightbackground,streams,forest,rocks,prints,decorations,settlements,animals):
@@ -240,6 +337,13 @@ class World:
 
     def turn(self): # For worlds with animals, move the animals in the world.
         for animal in self.animals:
-            animal.move(self.obstacles,self.animals)
+            if animal.dead == False:
+                animal.move(self.obstacles,self.animals)
+            for otheranimal in self.animals:
+                if animal.covers(otheranimal.xpos,otheranimal.ypos) and animal.strength > otheranimal.strength and animal.species != otheranimal.species:
+                    otheranimal.health -= animal.strength
+                    otheranimal.speed = otheranimal.health*otheranimal.maxspeed//100
+                    if otheranimal.health <= 0:
+                        otheranimal.dead = True
         self.objectsofheight.sort(key=lambda x:x.ybase) # A rare case in which bubble-sort might be more efficient, but
                                                         # we will use built-in sort anyway.
