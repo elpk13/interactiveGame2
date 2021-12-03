@@ -232,7 +232,7 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 # below.  The character, the animalTypes dictionary, and the larger print graphics
 # are not necessary for the construction of the world.
 
-def generateWorld(worldx,worldy,background, nightbackground, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphicsSmall, animalGraphics):
+def generateWorld(worldx,worldy,window_width,window_height,background, nightbackground, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphicsSmall, animalGraphics):
     # The first part of this function, concerning sub-functions that initialize
     # user-defined classes.  Updates to classes probably need to be updated here.
 
@@ -317,10 +317,10 @@ def generateWorld(worldx,worldy,background, nightbackground, streamAppearancesBy
                 else:
                     return Decoration(x,y,appearance.get_height(),appearance.get_width(),False,appearance,nightappearance)
 
-    def stampPrint(worldx,worldy,animal,streams,printGraphicsSmall):
+    def stampPrint(worldx,worldy,window_width,window_height,animal,streams,printGraphicsSmall):
         while True:
-            x = random.randint(0,worldx)
-            y = random.randint(0,worldy)
+            x = random.randint(window_width//2,worldx-window_width//2)
+            y = random.randint(window_height//2,worldy-window_height//2)
             if dry(x,y,streams):
                 appearance = printGraphicsSmall[animal]
                 return Print(x,y,appearance.get_height(),appearance.get_width(),animal,appearance)
@@ -366,14 +366,14 @@ def generateWorld(worldx,worldy,background, nightbackground, streamAppearancesBy
 
     mydecorations = decorate(worldx,worldy,decorGraphics,decorNightGraphics,decorDynamics,mystreams)
 
-    def leavePrints(worldx,worldy,printGraphicsSmall,streams):
+    def leavePrints(worldx,worldy,window_width,window_height,printGraphicsSmall,streams):
         count = worldx*worldy // 1000000
         prints = []
         for i in range(count):
-            prints.append(stampPrint(worldx,worldy,random.choice(list(printGraphicsSmall)),streams,printGraphicsSmall))
+            prints.append(stampPrint(worldx,worldy,window_width,window_height,random.choice(list(printGraphicsSmall)),streams,printGraphicsSmall))
         return prints
 
-    myprints = leavePrints(worldx,worldy,printGraphicsSmall,mystreams)
+    myprints = leavePrints(worldx,worldy,window_width,window_height,printGraphicsSmall,mystreams)
 
     return World(worldx,worldy,background,nightbackground,mystreams,myforest,myrocks,myprints,mydecorations, [          ],[       ])
 #    return World(worldx,worldy,background,nightbackground,mystreams,myforest,myrocks,myprints,mydecorations,mysettlements,myanimals)
