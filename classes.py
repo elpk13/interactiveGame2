@@ -144,6 +144,28 @@ class Print(Interactive): # Appearance should come from dictionary
         self.animal = animal
         super().__init__(xpos,ypos,height,width,False,appearance,appearance)
 
+class Settlement(Interactive,Obstacle):
+    def __init__(self,xpos,ypos,height,width,dynamic,appearance,nightappearance,collisionBox,human=False):
+        self.xpos = xpos
+        self.ypos = ypos
+        self.height = height
+        self.width = width
+        self.ybase = self.ypos + self.height
+        self.dynamic = dynamic
+        self.appearance = appearance
+        self.nightappearance = nightappearance
+        self.collisionBox = collisionBox
+        self.human = human
+        if self.human: # Human structures have a dangerous range around them, in which
+            self.dangerange = (self.height+self.width)/2 # a warning is triggered but
+        else:                                            # motion is not impaired.
+            self.dangerange = 0
+
+    def covers(self,possiblex,possibley):
+        if self.xpos - self.dangerange < possiblex < self.xpos + self.width + self.dangerange and self.ypos - self.dangerange < possibley < self.ypos + self.height + self.dangerange:
+            return True
+        return False
+
 class Animal(Interactive): # *Every* animal should be a member of a subclass.
     def __init__(self,xpos,ypos,height,width,appearance,species,speed,strength):
         self.species = species
@@ -330,7 +352,7 @@ class World:
         self.decorations = decorations # A list of decoration objects
         self.settlements = settlements # A list of settlement objects
         self.animals = animals # A list of animals, currently excluding the player.
-        self.obstacles = forest + rocks # All obstacles, to be sent to the posok() function
+        self.obstacles = forest + rocks + settlements # All obstacles, to be sent to the posok() function
         self.interactives = prints + settlements + animals # All interactives, to be sent to the collision() function
         self.objectsofheight = forest + rocks + prints + decorations + settlements + animals
         self.objectsofheight.sort(key=lambda x:x.ybase) # Sort all blittables, to be sent to the drawscreen() function
