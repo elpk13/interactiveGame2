@@ -127,6 +127,9 @@ def akela(screen,text,options=[]):
     else:
         return dialog(screen,text,options,akelapic)
 
+def selfnote(screen,text,portrait):
+    dialog(screen,'',[text],portrait)
+
 # Dialog test with long text.
 #testimage = pygame.image.load(os.path.join('Assets','Aspen_Headshot.png'))
 #screen = pygame.display.set_mode((1200,900))
