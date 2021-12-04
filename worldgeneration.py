@@ -209,6 +209,17 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 
     printGraphics, printGraphicsSmall, animalTypes = getPrintGraphics(window_height)
 
+    def getMiscellaneousGraphics():
+        miscellaneousGraphics = { }
+        miscellaneousNightGraphics = { }
+        miscellaneousGraphics['den'] = pygame.image.load(os.path.join('Assets','Wolf_Den.png'))
+        miscellaneousNightGraphics['den'] = pygame.image.load(os.path.join('Assets','Wolf_Den_Night.png'))
+        miscellaneousGraphics['farm'] = pygame.image.load(os.path.join('Assets','farm.png'))
+        miscellaneousNightGraphics['farm'] = pygame.image.load(os.path.join('Assets','farm_Night.png'))
+        return miscellaneousGraphics, miscellaneousNightGraphics
+
+    miscellaneousGraphics, miscellaneousNightGraphics = getMiscellaneousGraphics()
+
     def getAnimalGraphics(animalTypes):
         animalGraphics = { }
         for animal in animalTypes: # Iterate through the keys of dictionary animalTypes.
@@ -226,19 +237,19 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 
     animalGraphics = getAnimalGraphics(animalTypes)
 
-    return worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, animalTypes, animalGraphics
+    return worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, miscellaneousGraphics, miscellaneousNightGraphics, animalTypes, animalGraphics
 
 # Observe that not all the output from the above function is input into that
 # below.  The character, the animalTypes dictionary, and the larger print graphics
 # are not necessary for the construction of the world.
 
-def generateWorld(worldx,worldy,window_width,window_height,background, nightbackground, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphicsSmall, animalGraphics):
+def generateWorld(worldx,worldy,window_width,window_height,background, nightbackground, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphicsSmall, miscellaneousGraphics, miscellaneousNightGraphics, animalGraphics):
     # The first part of this function, concerning sub-functions that initialize
     # user-defined classes.  Updates to classes probably need to be updated here.
 
-    def pourStream(worldx,worldy,streamAppearancesByAim,streamNightAppearancesByAim,streamDimensionsByAim):
-        sourcex = random.randint(0,worldx) # Place a random source, pick a direction, and go.
-        sourcey = random.randint(0,worldy)
+    def pourStream(worldx,worldy,window_width,window_height,streamAppearancesByAim,streamNightAppearancesByAim,streamDimensionsByAim):
+        sourcex = random.randint(window_width,worldx) # Place a random source, pick a direction, and go.
+        sourcey = random.randint(window_height,worldy)
         dir = random.choice(['30','45','60'])
         riverys = {'30':58,'45':71,'60':100} # Vertical height of the river at crossing, by angle.
                                              # Equals width times the secant of the angle.
@@ -325,6 +336,38 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
                 appearance = printGraphicsSmall[animal]
                 return Print(x,y,appearance.get_height(),appearance.get_width(),animal,appearance)
 
+    def digDen(worldx,worldy,window_width,window_height,streams,obstacles,miscellaneousGraphics,miscellaneousNightGraphics):
+        denappearance = miscellaneousGraphics['den']
+        denightappearance = miscellaneousNightGraphics['den']
+        attempts = 0
+        while attempts < 6:
+            s = random.choice(random.choice(streams))
+            if window_width / 2 < s.xpos < worldx - window_width / 2 and window_height / 2 + denappearance.get_height() < s.ypos < worldy - window_height/2:
+                if posok(s.xpos + denappearance.get_width()/2, s.ypos + denappearance.get_height()/2,obstacles):
+                    return Settlement(s.xpos,s.ypos-denappearance.get_height(),denappearance.get_height(),denappearance.get_width(),False,denappearance,denightappearance,(0.8,0.1,0.5,0.8))
+            attempts += 1
+        x = random.randint(window_width//2,worldx-window_width//2-denappearance.get_width())
+        y = random.randint(window_height//2,worldy-window_height//2-denappearance.get_height())
+        return Settlement(x,y,denappearance.get_height(),denappearance.get_width(),False,denappearance,denightappearance,(0.8,0.1,0.5,0.8))
+
+    def buildFarm(worldx,worldy,window_width,window_height,world_items,miscellaneousGraphics,miscellaneousNightGraphics):
+        farmappearance = miscellaneousGraphics['farm']
+        farmnightappearance = miscellaneousNightGraphics['farm']
+        if random.random() > 0.5:
+            x = random.randint(0,window_width-farmappearance.get_width())
+        else:
+            x = random.randint(worldx - window_width, worldx-farmappearance.get_width())
+        if random.random() > 0.5:
+            y = random.randint(0,window_height-farmappearance.get_height())
+        else:
+            y = random.randint(worldy - window_height, worldy-farmappearance.get_height())
+        farm = Settlement(x,y,farmappearance.get_height(),farmappearance.get_width(),False,farmappearance,farmnightappearance,(0,1,0,1),True)
+        cleared = []
+        for item in world_items:
+            if item.xpos + item.width > farm.xpos and item.xpos < farm.xpos + farm.width and item.ypos + item.height > farm.ypos and item.ypos < farm.ypos - farm.height:
+                cleared.append(item)
+        return farm, cleared
+
     # The birthAnimal method, which initializes the animal class, is not here, as
     # animals are not present in the default world.
 
@@ -334,7 +377,7 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
 
     mystreams = [] # Pourstream is sufficient; I didn't feel like making a whole subfunction for the multiple streams.
     for s in range(2//random.randint(1,6)+1): # Maximum 3, but probably just one.
-        mystreams.append(pourStream(worldx,worldy,streamAppearancesByAim,streamNightAppearancesByAim,streamDimensionsByAim))
+        mystreams.append(pourStream(worldx,worldy,window_width,window_height,streamAppearancesByAim,streamNightAppearancesByAim,streamDimensionsByAim))
 
     def forestWorld(worldx,worldy,treeTypes,streams,treeGraphics,treeNightGraphics,treeGreenness):
         treecount = worldx*worldy * random.randint(28,175) // 10000000   # Based on historical forest estimates
@@ -375,7 +418,24 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
 
     myprints = leavePrints(worldx,worldy,window_width,window_height,printGraphicsSmall,mystreams)
 
-    return World(worldx,worldy,background,nightbackground,mystreams,myforest,myrocks,myprints,mydecorations, [          ],[       ])
+    myden = digDen(worldx,worldy,window_width,window_height,mystreams,myforest + myrocks,miscellaneousGraphics,miscellaneousNightGraphics)
+    myclearance = []
+    mysettlements = [myden]
+    for f in range(2//random.randint(1,6)+1): # Same as streams - count of farms is at most three, probably one.
+        farm, clearance = buildFarm(worldx,worldy,window_width,window_height,myforest+myrocks+myprints+mydecorations,miscellaneousGraphics,miscellaneousNightGraphics)
+        mysettlements.append(farm)
+        myclearance.append(clearance)
+    for cleareditem in myclearance:
+        if cleareditem in myforest:
+            myforest.remove(cleareditem)
+        elif cleareditem in myrocks:
+            myrocks.remove(cleareditem)
+        elif cleareditem in myprints:
+            myprints.remove(cleareditem)
+        elif cleareditem in mydecorations:
+            mydecorations.remove(cleareditem)
+
+    return World(worldx,worldy,background,nightbackground,mystreams,myforest,myrocks,myprints,mydecorations,mysettlements,[       ])
 #    return World(worldx,worldy,background,nightbackground,mystreams,myforest,myrocks,myprints,mydecorations,mysettlements,myanimals)
 # When we iterate through a null list, it can only throw syntax errors.  Try:
 # for i in []:
@@ -423,8 +483,8 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
 
     def birthPreyAnimal(borders,animal,obstacles,animalGraphics):
         while True:
-            x = random.randint(borders[0],borders[1])
-            y = random.randint(borders[2],borders[3])
+            x = random.randint(borders[0]+window_width//5,borders[1]-window_width//5)
+            y = random.randint(borders[2]+window_height//5,borders[3]-window_height//5)
             if posok(x,y,obstacles):
                 appearance = animalGraphics[animal]
                 if animal == 'rabbit': # Keep in if-elif tree so that class is different.
