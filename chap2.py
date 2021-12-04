@@ -1,12 +1,12 @@
-# Chapter 1
-# Featuring a young wolf who is new to the world.
+# Chapter 2
+# The search for a den somewhere in the world.
 
 from worldgeneration import *
 from gamethods import *
 import random
 import dialog
 import pygame
-
+import huntgame
 
 def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, miscellaneousGraphics, miscellaneousNightGraphics, animalTypes, animalGraphics):
     globinfo = readglobals()
@@ -20,11 +20,9 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
     charname, framelists = getCharacterData(wolfGraphics)
 
     inchapter = True
+
     metworldedge = False
-    metprey = False
-    metpredator = False
-    metignore = False
-    metperson = False
+    methuman = False
 
     foundnewpack = False
 
@@ -37,14 +35,15 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
     currentmode = 0
     currentframe = 0
 
-    health = 100
-    writeHealth(health)
+    health = readHealth()
     timelapsed = 0
     night = False
     frame_time = globinfo['frame_time']
 
     drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
-    dialog.akela(screen,"This is the second phase.")
+    dialog.akela(screen,"On behalf of the pack, I wish you well in your search for a new family.")
+    dialog.akela(screen,"You'll be hunting alone now, until you find your new den.")
+    dialog.dialog(screen,"Akela",['Dens look like this and are usually found near water.'],miscellaneousGraphics['den'])
 
     while inchapter:
         for event in pygame.event.get():
@@ -63,6 +62,7 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
             newposy += 1
         if pressed[pygame.K_RETURN]:
             speed = 40
+            health -= 0.1
         else:
             speed = 10
         # Newpos variables currently indicate only the direction of motion as a
@@ -85,14 +85,12 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
             playerx,playery = newposx,newposy # Player position changes;
         elif metworldedge == False and not posinworld(newposx,newposy,worldx,worldy,window_width,window_height):
             metworldedge = True
-            dialog.akela(screen,"The map background is only so big.")
+            dialog.selfnote(screen,"Doesn't smell like there are any wolves that way.",framelists[4])
         # Newpos variables now reflect current position.
         doesCol = intCol(newposx,newposy,chapterworld.interactives)
         if doesCol:
             if isinstance(doesCol,Print):
-                foundnewpack = True
                 animal = doesCol.animal
-                dialog.akela(screen,"Looks like you've found some tracks!")
                 guesses = [animal]
                 guesses.extend(random.sample(list(printGraphics),3))
                 if guesses.count(animal) > 1:
@@ -101,31 +99,25 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
                 correctans = guesses.index(animal)
                 specguess = dialog.dialog(screen,"What kind of tracks are these?",guesses,printGraphics[animal])
                 if specguess == correctans:
-                    dialog.akela(screen,"Very good!")
+                    dialog.selfnote(screen,"That's right!",framelists[4])
                 else:
-                    dialog.akela(screen,"Actually, those are "+animal+" tracks.")
+                    dialog.selfnote(screen,"No, that's not right.",framelists[4])
                 actions = ['hunt','ignore it','run away']
-                actguess = dialog.dialog(screen,"What do you do when you see "+animal+" tracks?",actions,printGraphics[animal])
-                if actguess == animalTypes[animal]:
-                    dialog.akela(screen,"That's right!")
-                else:
-                    dialog.akela(screen,"When you see "+animal+" tracks, you should "+actions[animalTypes[animal]]+".")
-                if animalTypes[animal] == 0:
-                    refusehunt = dialog.dialog(screen,"Ready to hunt?",['Yes','No'],printGraphics[animal]) # Pick better image?
-                    if refusehunt:
-                        dialog.akela(screen,"Okay, but be sure to let me know if you find another track.")
-                    else:
-                        dialog.akela(screen,"Then let's go hunt together!")
-                        metprey = True
-                        # Connect the hunting mini-game here!!!!
-                elif animalTypes[animal] == 1:
-                    metignore = True
-                else:
-                    metpredator = True
+                actguess = dialog.dialog(screen,"What to do?",actions,printGraphics[animal])
+                if actguess == 0:
+                    # Connect the hunting mini-game here!!!!
+                    writeHealth(health)
+                    borders, huntworld = makeHuntWorld(chapterworld,playerx,playery,window_width,window_height,animal,animalGraphics,night)
+                    huntgame.run_hunting_game(screen,borders,huntworld,timelapsed,night,framelists,wolfGraphics)
+                    health = readHealth()                                              # If pup, send later framelists.
                 doesCol.xpos = -1000
                 drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
-            elif isinstance(intCol,list): # Code for other interactives - like the den - go here.
-                pass
+            elif isinstance(doesCol,Settlement): # Code for other interactives - like the den - go here.
+                if doesCol.human and not methuman:
+                    dialog.selfnote(screen,"Smells like human.  I'd better look out.",framelists[4])
+                    methuman = True
+                else:
+                    foundnewpack = True
 
         if dist > 0: # If player moves, update animation frame in list.
             if currentframe != len(framelists[currentmode]) - 1:
@@ -138,7 +130,7 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
         drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
         pygame.time.delay(frame_time)
         timelapsed += 1
-        if timelapsed == 20: # Should be 2400 ticks per year.  Set to 20 for testing.
+        if timelapsed == 2400: # Should be 2400 ticks per year.  Set to 20 for testing.
             inchapter = False
         elif timelapsed % 600 == 0:
             night = False
