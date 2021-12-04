@@ -135,7 +135,7 @@ def intCol(x,y,interactives):
 # the settings file.
 def readHealth():
     settingsfile = open("settings.txt","r")
-    health = int(settingsfile.readlines()[3])
+    health = float(settingsfile.readlines()[3][:-1])
     settingsfile.close()
     return health
 

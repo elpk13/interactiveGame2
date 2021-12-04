@@ -157,7 +157,7 @@ class Settlement(Interactive,Obstacle):
         self.collisionBox = collisionBox
         self.human = human
         if self.human: # Human structures have a dangerous range around them, in which
-            self.dangerange = (self.height+self.width)/2 # a warning is triggered but
+            self.dangerange = (self.height+self.width)/6 # a warning is triggered but
         else:                                            # motion is not impaired.
             self.dangerange = 0
 
@@ -248,7 +248,7 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
 
 class Rabbit(Animal): # Animals' subclasses should - but do not yet - have unique
     def __init__(self,xpos,ypos,height,width,appearance): # move methods.
-        super().__init__(xpos,ypos,height,width,appearance,'rabbit',20,0)
+        super().__init__(xpos,ypos,height,width,appearance,'rabbit',20,10)
 
     def safe(self,obstacles,animals,direction): # For a rabbit, a direction is
         newx = self.xpos + 4*self.speed*math.cos(direction) # acceptable if no
@@ -358,6 +358,7 @@ class World:
         self.objectsofheight.sort(key=lambda x:x.ybase) # Sort all blittables, to be sent to the drawscreen() function
 
     def turn(self): # For worlds with animals, move the animals in the world.
+        deaths = []
         for animal in self.animals:
             if animal.dead == False:
                 animal.move(self.obstacles,self.animals)
@@ -367,5 +368,6 @@ class World:
                     otheranimal.speed = otheranimal.health*otheranimal.maxspeed//100
                     if otheranimal.health <= 0:
                         otheranimal.dead = True
+                        deaths.append(otheranimal)
         self.objectsofheight.sort(key=lambda x:x.ybase) # A rare case in which bubble-sort might be more efficient, but
-                                                        # we will use built-in sort anyway.
+        return deaths                                   # we will use built-in sort anyway.

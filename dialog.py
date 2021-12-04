@@ -120,9 +120,12 @@ def dialog(screen,question,options,image=None,width=0.5,height=1/3):
                     return choice
                 drawscreen(runningwidth,runningheight,buffer,image)
 
-def akela(screen,text):
-    akelapic = pygame.image.load(os.path.join('Assets','Nico_Headshot.png'))
-    dialog(screen,'Akela',[text],akelapic)
+def akela(screen,text,options=[]):
+    akelapic = pygame.image.load(os.path.join('Assets','Akela.png'))
+    if options == []:
+        return dialog(screen,'Akela',[text],akelapic)
+    else:
+        return dialog(screen,text,options,akelapic)
 
 # Dialog test with long text.
 #testimage = pygame.image.load(os.path.join('Assets','Aspen_Headshot.png'))

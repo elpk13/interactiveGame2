@@ -481,22 +481,29 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
         else:
             return True
 
-    def birthPreyAnimal(borders,animal,obstacles,animalGraphics):
-        while True:
+    def birthPreyAnimal(borders,window_width,window_height,animal,obstacles,animalGraphics):
+        preylist = []
+        preycounts = {'rabbit':random.randint(3,5),'deer':random.randint(1,3),'bison':1}
+        if animal in preycounts:
+            count = preycounts[animal]
+        else:
+            count = 1
+        while len(preylist) < count:
             x = random.randint(borders[0]+window_width//5,borders[1]-window_width//5)
             y = random.randint(borders[2]+window_height//5,borders[3]-window_height//5)
             if posok(x,y,obstacles):
                 appearance = animalGraphics[animal]
                 if animal == 'rabbit': # Keep in if-elif tree so that class is different.
-                    return Rabbit(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance)
+                    preylist.append(Rabbit(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance))
                 elif animal == 'deer': # Class is different so that move method is different,
-                    return Deer(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance)
+                    preylist.append(Deer(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance))
                 elif animal == 'bison': # Else there would be an uglier if-else tree in 'move()'.
-                    return Bison(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance)
+                    preylist.append(Bison(x,y,appearance[0][0].get_height(),appearance[0][0].get_width(),appearance))
                 else:
-                    return Animal(x,y,appearance[0][0].get_height(),appearance[0][0].get_height(),appearance,animal,10)
+                    preylist.append(Animal(x,y,appearance[0][0].get_height(),appearance[0][0].get_height(),appearance,animal,10))
+        return preylist
 
-    newanimals = [ birthPreyAnimal(borders,prey,keptforest+keptrocks,animalGraphics) ]
+    newanimals = birthPreyAnimal(borders,window_width,window_height,prey,keptforest+keptrocks,animalGraphics)
 
     def addWolf(borders,obstacles,wolfGraphics,maincharname):
         while True:
@@ -521,7 +528,10 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
                 return Wolf(x,y,appearances[0][0].get_height(),appearances[0][0].get_width(),appearances,wolfname)
 
     if pack:
-        for i in range(packmemcount):
-            newanimals.append(addWolf(borders,keptforest+keptrocks,wolfGraphics,maincharname))
+        if pack == True: # 'if pack is the boolean true, not an object.'
+            for i in range(packmemcount):
+                newanimals.append(addWolf(borders,keptforest+keptrocks,wolfGraphics,maincharname))
+        else:
+            newanimals.extend(pack)
 
     return borders, World(window_width,window_height,huntbackground,huntbackground,[newstream],keptforest,keptrocks, [    ], keptdecorations, [          ],newanimals)

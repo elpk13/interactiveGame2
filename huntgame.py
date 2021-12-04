@@ -12,18 +12,15 @@ pygame.init()
 # Currently, this function is called at the bottom of the script, so that the
 # script can run for itself.
 
-def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All in function, so can run from other screen.
+def run_hunting_game(screen,borders,huntworld,time,night,framelists,wolfGraphics,training=False): # All in function, so can run from other screen.
     globinfo = readglobals() # We will soon add screen, etc. to function arguments
     window_width = globinfo['window_width']
     window_height = globinfo['window_height']
 
-
     # Below is the getWorldGraphics function.  Ideally, this would only run once,
     # and not repeat for every chapter.  Move into arguments called to run_first_chapter()
     # when we get a chance.
-    worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, animalTypes, animalGraphics = getWorldGraphics(globinfo['window_height'])
     ybaselist = getYbaselist(huntworld.objectsofheight)
-    charname, framelists = getCharacterData(wolfGraphics)
 
     playerx = int((borders[0]+borders[1])/2)
     playery = int((borders[2]+borders[3])/2)
@@ -35,7 +32,13 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
     timelapsed = time
     frame_time = globinfo['frame_time']
 
+    packkills = []
+
     drawHuntScreen(screen,window_width,window_height,framelists,playerx,playery,borders,huntworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
+
+    if training:
+        dialog.akela(screen,"Look for, and catch, the prey.  Remember, you can hold the select key to run.")
+        dialog.dialog(screen,"Akela",["Prey looks like this:"],huntworld.animals[0].appearance[0][0])
 
     while True: # End the loop by returning something
         for event in pygame.event.get():
@@ -88,6 +91,7 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
         if not (borders[0] < playerx < borders[1] and borders[2] < playery < borders[3]):
             if training:
                 dialog.akela(screen,"You won't catch anything if you run off like that.")
+            writeHealth(health)
             return 'player left'
         doesCol = intCol(newposx,newposy,huntworld.interactives)
         if doesCol:
@@ -98,9 +102,7 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
                     huntworld.objectsofheight.remove(doesCol)
                     if training:
                         dialog.akela(screen,"You've caught a rabbit!  Enjoy your meal.")
-                    health += 5
-                    if health > 100:
-                        health = 100
+                    packkills.append(doesCol)
                 elif isinstance(doesCol,Deer): # For deer - slow kill
                     doesCol.health -= 45
                     doesCol.speed = doesCol.health*doesCol.maxspeed//100
@@ -110,9 +112,7 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
                         huntworld.objectsofheight.remove(doesCol)
                         if training:
                             dialog.akela(screen,"We've killed a deer!  Enjoy the meal.")
-                        health += 20
-                        if health > 100:
-                            health = 100
+                        packkills.append(doesCol)
                 elif isinstance(doesCol,Bison): # For bison - rapid death
                     health -= 80
             elif isinstance(intCol,list): # Code for other interactives - like the den - go here.
@@ -137,10 +137,11 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
                     huntworld.animals.remove(eachanimal)
                     huntworld.interactives.remove(eachanimal)
                     huntworld.objectsofheight.remove(eachanimal)
+                    packkills.append(eachanimal)
                 elif not (borders[0] < eachanimal.xpos < borders[1] and borders[2] < eachanimal.ypos < borders[3]):
                     preyalldead = False
                     if training:
-                        dialog.akela(screen,f"It looks like the {eachanimal.species} escaped.")
+                        dialog.akela(screen,f"It looks like one {eachanimal.species} escaped.")
                     huntworld.animals.remove(eachanimal)
                     huntworld.interactives.remove(eachanimal)
                     huntworld.objectsofheight.remove(eachanimal)
@@ -150,8 +151,18 @@ def run_hunting_game(screen,borders,huntworld,time,night,training=False): # All 
         if preyalldead:
             if training:
                 dialog.akela(screen,"Another successful hunt!")
+            for scavengeable in packkills:
+                health += scavengeable.maxstrength / (len(huntworld.animals)+1)
+            if health > 100:
+                health = 100
+            writeHealth(health)
             return 'success'
         elif not preyingame:
             if training:
                 dialog.akela(screen,"We'll catch some next time.")
+            for scavengeable in packkills:
+                health += scavengeable.maxstrength / (len(huntworld.animals)+1)
+            if health > 100:
+                health = 100
+            writeHealth(health)
             return 'prey escaped'
