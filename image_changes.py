@@ -1,3 +1,8 @@
+# This script, never used to run the game, only used to modify graphics files with
+# original filters.  Might not be necessary going forward, outside the 'nighten_image'
+# feature, which makes a night-appearance with the _night name convention for any
+# file sent.
+
 # Like pygame, this is not a standard module. It can be downloaded via pip
 from PIL import Image # Limited imports
 import os
@@ -44,7 +49,7 @@ def nightenImage(path):
                 newimage.putpixel((x,y),newpixel)
         newimage.save(os.path.join(imagename + '_Night.jpg'))
 
-def reopacity(streampath):
+def reopacity(streampath): # Turns white pixels to opaque pixels.
     oldimage = Image.open(streampath)
     newimage = Image.new("RGBA",oldimage.size)
     for x in range(oldimage.size[0]):
@@ -58,7 +63,7 @@ def reopacity(streampath):
     newimage.save(streampath)
     nightenImage(streampath)
 
-def fallTree(path):
+def fallTree(path): # Makes autumn version of a tree image.
     oldimage = Image.open(path)
     pathname = str(path)
     imagename = pathname.split('\\')[-1][:-4]
@@ -85,9 +90,9 @@ def fallTree(path):
                 newimage.putpixel((x,y),newpixel)
         newimage.save(os.path.join('Animations','Trees','Autumn'.join(imagenames) + '.png'))
 
-def completeTree(tree,seasonal=True):
-    if seasonal:
-        for i in range(1,8):
+def completeTree(tree,seasonal=True): # Takes name of tree, assumes that winter and summer day
+    if seasonal:                      # frames are done and in correct location with correct names
+        for i in range(1,8):          # and makes the other four framelists.
             fallTree(os.path.join('Animations','Trees',tree+'_Summer000'+str(i)+'.png'))
             nightenImage(os.path.join('Animations','Trees',tree+'_Summer000'+str(i)+'.png'))
             nightenImage(os.path.join('Animations','Trees',tree+'_Autumn000'+str(i)+'.png'))
@@ -96,7 +101,7 @@ def completeTree(tree,seasonal=True):
         for i in range(1,8):
             nightenImage(os.path.join('Animations','Trees',tree+'000'+str(i)+'.png'))
 
-def nopacity(path,mark=True):
+def nopacity(path,mark=True): # Turns any semi-opaque pixel in an image to solid.
     oldimage = Image.open(path)
     newimage = Image.new(oldimage.mode,oldimage.size)
     imagename = str(path).split('\\')[-1][:-4]
@@ -113,8 +118,8 @@ def nopacity(path,mark=True):
     else:
         newimage.save(path)
 
-def nopacity2(path,threshold,mark=True):
-    oldimage = Image.open(path)
+def nopacity2(path,threshold,mark=True): # Turns pixels of some degree of opacity solid,
+    oldimage = Image.open(path)          # others to entirely opaque.
     newimage = Image.new(oldimage.mode,oldimage.size)
     imagename = str(path).split('\\')[-1][:-4]
     for x in range(oldimage.size[0]):
@@ -153,5 +158,5 @@ def nopacity2(path,threshold,mark=True):
 #for aim in ['30','45','60','30s','45s','60s','30-45','45-60','60-30','30-60','60-45','45-30']:
 #    for i in range(1,4):
 #        reopacity(os.path.join('Animations','Streams',aim+'000'+str(i)+'.png'))
-for i in range(1,8):
-    reopacity(os.path.join('Animations','Trees','Spruce000'+str(i)+'.png'))
+#for i in range(1,8):
+ #   reopacity(os.path.join('Animations','Trees','Spruce000'+str(i)+'.png'))
