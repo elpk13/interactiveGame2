@@ -21,9 +21,11 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
 
     inchapter = True
 
+    # Player will re-discover these things from chapter one.
     metworldedge = False
     methuman = False
 
+    # Our objective
     foundnewpack = False
 
     playerx = random.randint(0,worldx)
@@ -35,7 +37,7 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
     currentmode = 0
     currentframe = 0
 
-    health = readHealth()
+    health = readHealth() # Health carries over from file.
     timelapsed = 0
     night = False
     frame_time = globinfo['frame_time']
@@ -116,7 +118,7 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
                 if doesCol.human and not methuman:
                     dialog.selfnote(screen,"Smells like human.  I'd better look out.",framelists[4])
                     methuman = True
-                else:
+                elif not doesCol.human:
                     foundnewpack = True
 
         if dist > 0: # If player moves, update animation frame in list.
@@ -130,7 +132,7 @@ def run_second_chapter(screen, worldx, worldy, background, nightbackground, wolf
         drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
         pygame.time.delay(frame_time)
         timelapsed += 1
-        if timelapsed == 2400: # Should be 2400 ticks per year.  Set to 20 for testing.
+        if timelapsed == 2400: # Should be 2400 ticks per year.
             inchapter = False
         elif timelapsed % 600 == 0:
             night = False
