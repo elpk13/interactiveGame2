@@ -1,7 +1,18 @@
 import math
 import random
 
-# Any object that exists in the world is of object class.
+# This module contains all of, and only, the class definitions for the Wolf Adventure game.
+# There are no functions in this module (though object methods resemble functions, the use of
+# the term 'function' to refer to them is discouraged).
+
+# Most classes have parent classes - the Object class, which defines an object that can appear
+# on-screen in the world in simplest terms.  Its child classes include Obstacle, Interactive, and
+# Decoration; the first two of these have collision boxes and point-within methods respectively.
+# Decoration serves mainly to classify other classes.
+
+# All objects in the game are instances of grandchild classes of Object.  At the very base of this
+# list is the World class, which contains lists of the objects in the world as its attributes.
+
 class Object:
     def __init__(self,xpos,ypos,height,width,dynamic,appearance,nightappearance):
         self.xpos = xpos # Distance between object's left side and that of the world.
@@ -189,7 +200,7 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
     def covers(self,possiblex,possibley):
         if self.xpos - self.width/3 < possiblex < self.xpos + self.width/3 and self.ypos - self.height/3 < possibley < self.ypos + self.height/3:
             return True
-        return False
+        return False # Note:  for animal-to-animal collisions, this isn't as good, because it only compares a point.  Fix with another method?
 
     def posok(self,x,y,obstacles): # Every animal will need to check positions
         for ob in obstacles: # in motion.
@@ -198,7 +209,7 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
         else:
             return True
 
-    # Animals are drawn differently, as they have four framelists and direction,
+    # Animals are drawn differently, as they have two to four framelists (for directions),
     # and of course a different thing meant by xpos and ypos.
     def draw(self,screen,playerx,playery,window_width,window_height,night,time,scroll=True,leftx=0,topy=0):
         appearance = self.appearance[self.currentmode][self.currentframe]
@@ -233,12 +244,14 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
             else:
                 return 0
 
-    def framepush(self):
+    def framepush(self): # Switch current frame through cycle.
         if self.currentframe == len(self.appearance[self.currentmode]) - 1:
             self.currentframe = 0
         else:
             self.currentframe += 1
 
+           # Move method takes a list of other animals - but in calling, this doesn't include
+        # the player, who is not an animal object.  Make object?  No time to fix.
     def move(self,obstacles,animals,direction=135): # A default movement method, wherein "direction"
         directionr = direction*math.pi/180 # is degrees counterclockwise from east.
         newx = self.xpos + self.speed*math.cos(directionr) # Recall that positive
@@ -254,16 +267,16 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
         self.ypos = newy # Do not call draw - the drawScreen will do that.
         self.ybase = newy + self.height
 
-class Rabbit(Animal): # Animals' subclasses should - but do not yet - have unique
-    def __init__(self,xpos,ypos,height,width,appearance): # move methods.
+class Rabbit(Animal):
+    def __init__(self,xpos,ypos,height,width,appearance):
         self.direction = 0
         super().__init__(xpos,ypos,height,width,appearance,'rabbit',20,10)
 
-    def safe(self,obstacles,animals,direction): # For a rabbit, a direction is
-        newx = self.xpos + 4*self.speed*math.cos(self.direction) # acceptable if no
-        newy = self.ypos - 4*self.speed*math.sin(self.direction) # obstacles a jump away
-        if not self.posok(newx,newy,obstacles): # and no non-rabbits in that
-            return False                        # direction.
+    def safe(self,obstacles,animals,direction):
+        newx = self.xpos + 4*self.speed*math.cos(self.direction)
+        newy = self.ypos - 4*self.speed*math.sin(self.direction)
+        if not self.posok(newx,newy,obstacles):
+            return False
         for animal in animals:
             if not isinstance(animal,Rabbit):
                 enemydir = math.atan2(self.ypos-animal.ypos,animal.xpos-self.xpos)
@@ -289,6 +302,11 @@ class Rabbit(Animal): # Animals' subclasses should - but do not yet - have uniqu
             self.ybase = self.ypos + self.height
             self.currentmode = self.orient(self.direction)
         self.framepush()
+        # Heard of rabbits IRL running into briars for safety.  As yet, no
+        # briars in the game though, and we'd like rabbits to be the 'easy' prey.
+        # The British considered rabbits to be such convenient prey, multiplying quickly
+        # and being easy for dogs to catch, that they were introduced to Australia
+        # to feed settlers.  This would create a problem.
 
 class Deer(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):
@@ -321,8 +339,11 @@ class Deer(Animal):
 class Bison(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):
         super().__init__(xpos,ypos,height,width,appearance,'bison',50,100)
+    # Bison deserve a move method?  Or can they just use the single-direction default?
+    # Since bison do charge, and only the player would be dumb enough to face one, and 
+    # the player isn't an object and thus not sent to the function, maybe leave it?
 
-class Wolf(Animal): # Consider making part of a general animal class for the hunting game?
+class Wolf(Animal):
     def __init__(self,xpos,ypos,height,width,appearance,name):
         self.name = name
         super().__init__(xpos,ypos,height,width,appearance,'wolf',40,45)
