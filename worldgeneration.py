@@ -6,18 +6,21 @@ import math
 import dialog
 import bisect
 
-# This script contains two functions:  getWorldGraphics, which loads all the
+# This script contains three functions:  1, getWorldGraphics, which loads all the
 # images that appear in the world from their files and sends them in dictionaries.
 # Running this function only once allows the image loading to only occur once,
 # good for keeping world generation fast.  Keeping all image loading in this
 # function also makes it a one-stop place to check filenames, though menu images
-# are not a part of it.
+# are not a part of it (and dialog.py still loads images each time - sorry).
 
 # The second function, generateWorld, produces an object of the class World,
 # which has as attributes lists of every object to appear in the world.
 # This function has two primary parts:  the first, a set of sub-functions that
 # initialize objects of our own classes (e.g., plantTree), the second, a set of
 # subfunctions that produces lists of these to be sent to the world object.
+
+# The third, makeHuntWorld, takes a world, cuts a window-sized rectangle from it, 
+# and adds animals.  Sub-functions to initialize animal classes are found there.
 
 # Argument names in subfunctions generally match those in the parent function.
 
@@ -41,7 +44,7 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 
 
         wolfGraphics = { }
-        for wolfname in ['Mani']:
+        for wolfname in ['Mani']: # Add more wolves here when graphics are made!  This should put them everywhere.
             pframers = [] # Form list of animations.  One for right-walking, one for
             pframels = [] # left-walking, one up, one down.
             pframeus = [] # Each starts with standing and loops from the third frame.
@@ -104,9 +107,9 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
     streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim = getStreamGraphics()
 
     def getStreamCurveCoefficients(): # The coefficients of curves in stream bends
-        def fg(t,w,i,e): # need only be calculated once.  This method is explained in a side document.
-            def r(d): # Cool, a fourth-order nested function!
-                return int(d)*math.pi/180 # Converts degree-strings to radians.
+        def fg(t,w,i,e): # need only be calculated once.  Stream borders are cubic functions meant to be tangent to certain lines at certain points;
+            def r(d): # Cool, a fourth-order nested function!                        # this makes the bends line up with the three straight parts.
+                return int(d)*math.pi/180 # Converts degree-strings to radians.      # See https://www.desmos.com/calculator/gi2ea0trw1 for demo.
             f = ( (t*math.tan(r(i))+t*math.tan(r(e))+2*w/math.cos(r(e))-2*t)/t**3 , (3*t-3*w/math.cos(r(e))-2*t*math.tan(r(e))-t*math.tan(r(i)))/t**2 , math.tan(r(e)) , w/math.cos(r(e)) )
             g = ( (t*math.tan(r(i))+t*math.tan(r(e))+2*w/math.cos(r(i))-2*t)/t**3 , (3*t-3*w/math.cos(r(i))-2*t*math.tan(r(e))-t*math.tan(r(i)))/t**2 , math.tan(r(e)) , 0 )
             return f, g
@@ -166,8 +169,8 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
         decorNightGraphics = { }
         decorDynamics = { }
         for dynamictype in ['grass']:
-            dynamicLengths = {'grass':7}
-            appearances = []
+            dynamicLengths = {'grass':7}  # Unlike trees, which all blow in the same wind, and animals,
+            appearances = []              # dynamic decorations are allowed to have different lengths of animations.
             nightappearances = []
             for i in range(1,dynamicLengths[dynamictype]+1):
                 appearances.append(pygame.image.load(os.path.join('Animations','Decorations',dynamictype+'000'+str(i)+'.png')))
@@ -209,8 +212,8 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 
     printGraphics, printGraphicsSmall, animalTypes = getPrintGraphics(window_height)
 
-    def getMiscellaneousGraphics():
-        miscellaneousGraphics = { }
+    def getMiscellaneousGraphics(): # Would be 'getSettlementGraphics', etc., but it was the last one,
+        miscellaneousGraphics = { } # really didn't want to change everything again to make another.
         miscellaneousNightGraphics = { }
         miscellaneousGraphics['den'] = pygame.image.load(os.path.join('Assets','Wolf_Den.png'))
         miscellaneousNightGraphics['den'] = pygame.image.load(os.path.join('Assets','Wolf_Den_Night.png'))
@@ -229,9 +232,9 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
             frameds = []
             for frame in range(1,5):
                 framer = pygame.image.load(os.path.join('Animations','Animals',animal+'_right000'+str(frame)+'.png'))
-                if animal == 'rabbit':
+                if animal == 'rabbit':  # Scale images down for certain species.
                     framer = pygame.transform.scale(framer,(int(height*framer.get_width()/(18*framer.get_height())),int(height/18)))
-                elif animal == 'deer':
+                elif animal == 'deer':  # This does cause pixely images in the dialog, though.
                     framer = pygame.transform.scale(framer,(int(height*framer.get_width()/(6*framer.get_height())),int(height/6)))
                 framers.append(framer)
                 framels.append(pygame.transform.flip(framers[-1],True,False))
@@ -254,8 +257,8 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
 
     def pourStream(worldx,worldy,window_width,window_height,streamAppearancesByAim,streamNightAppearancesByAim,streamDimensionsByAim):
         sourcex = random.randint(window_width,worldx) # Place a random source, pick a direction, and go.
-        sourcey = random.randint(window_height,worldy)
-        dir = random.choice(['30','45','60'])
+        sourcey = random.randint(window_height,worldy) # Since dens place near streams IRL, try to have enough stream in world.
+        dir = random.choice(['30','45','60'])      # Degrees counterclockwise from east, if going upstream.  All streams flow southwest, as is typical for Indiana.
         riverys = {'30':58,'45':71,'60':100} # Vertical height of the river at crossing, by angle.
                                              # Equals width times the secant of the angle.
         aim = dir+'s'
@@ -265,7 +268,7 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
 
         while runningx > 0 and runningy < worldy:
             if random.random() > 0.25: # Half a chance of changing direction with each.
-                newdir = random.choice(['30','45','60'])
+                newdir = random.choice(['30','45','60']) # Because it might pick the same again.
             else:
                 newdir = dir
             if newdir == dir:
@@ -345,7 +348,7 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
         denappearance = miscellaneousGraphics['den']
         denightappearance = miscellaneousNightGraphics['den']
         attempts = 0
-        while attempts < 6:
+        while attempts < 6: # If possible, place den near a stream.
             s = random.choice(random.choice(streams))
             if window_width / 2 < s.xpos < worldx - window_width / 2 and window_height / 2 + denappearance.get_height() < s.ypos < worldy - window_height/2:
                 if posok(s.xpos + denappearance.get_width()/2, s.ypos + denappearance.get_height()/2,obstacles):
@@ -367,9 +370,9 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
         else:
             y = random.randint(worldy - window_height, worldy-farmappearance.get_height())
         farm = Settlement(x,y,farmappearance.get_height(),farmappearance.get_width(),False,farmappearance,farmnightappearance,(0,1,0,1),True)
-        cleared = []
+        cleared = [] # This returns a list of objects in the world that overlap with the farm - to be cleared.
         for item in world_items:
-            if item.xpos + item.width > farm.xpos and item.xpos < farm.xpos + farm.width and item.ypos + item.height > farm.ypos and item.ypos < farm.ypos - farm.height:
+            if (item.xpos + item.width > farm.xpos or item.xpos < farm.xpos + farm.width) and (item.ypos + item.height > farm.ypos or item.ypos < farm.ypos - farm.height):
                 cleared.append(item)
         return farm, cleared
 
@@ -448,6 +451,7 @@ def generateWorld(worldx,worldy,window_width,window_height,background, nightback
 #     tom.throwmeanerror(idareyou)
 # in a command prompt; it's fun!
 
+                 # Old world, player location, window size          prey to add, graphics, night   Consider sending a pack object, so that wolves can be in both worlds?
 def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,animalGraphics,night,pack=False,wolfGraphics={ },maincharname='',packmemcount=0):
     borders = (int(centerx - window_width/2), int(centerx + window_width/2), int(centery - window_height/2), int(centery + window_width/2))
     if night:
@@ -460,6 +464,7 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
             return True
         return False
 
+    # Take the objects within our slice of the world.
     newstream = []
     for stream in oldworld.streams:
         for segment in stream:
@@ -487,7 +492,7 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
             return True
 
     def birthPreyAnimal(borders,window_width,window_height,animal,obstacles,animalGraphics):
-        preylist = []
+        preylist = [] # For some species, hunt large litters.
         preycounts = {'rabbit':random.randint(3,5),'deer':random.randint(1,3),'bison':1}
         if animal in preycounts:
             count = preycounts[animal]
@@ -511,7 +516,7 @@ def makeHuntWorld(oldworld,centerx,centery,window_width,window_height,prey,anima
     newanimals = birthPreyAnimal(borders,window_width,window_height,prey,keptforest+keptrocks,animalGraphics)
 
     def addWolf(borders,obstacles,wolfGraphics,maincharname):
-        while True:
+        while True: # Spawn wolves at random locations on map border.
             s = random.randint(0,2*(borders[1]+borders[3]-borders[0]-borders[2]))
             if s < borders[1] - borders[0]:
                 x = borders[0] + s
