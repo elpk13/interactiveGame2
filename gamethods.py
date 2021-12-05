@@ -148,6 +148,8 @@ def writeHealth(health):
     settingsfile.writelines(sets)
     settingsfile.close()
 
+# This function gets the appearance of the current character, based on settings
+# file value and the wolfGraphics dictionary.
 def getCharacterData(wolfGraphics):
     settingsfile = open("settings.txt","r") # Retrieve current status of settings
     currentsettings = settingsfile.readlines() # from settings file.
@@ -157,16 +159,18 @@ def getCharacterData(wolfGraphics):
     charappearance = wolfGraphics[charname]
     return charname, charappearance
 
-def addAnimal(world, animalGraphics):
-    x, y = random.randint(0,world.width), random.randint(0,world.height)
-    while not posok(x, y, world.obstacles):
-        x, y = random.randint(0,world.width), random.randint(0,world.height)
-    appearance = animalGraphics['rabbit']
-    newAnimal = Animal(x,y,appearance[0].get_width(),appearance[0].get_height(),appearance,'rabbit',5)
-    world.animals.append(newAnimal)
-    world.objectsofheight.append(newAnimal)
-    world.interactives.append(newAnimal)
+# From testing - do not use
+#def addAnimal(world, animalGraphics):
+#    x, y = random.randint(0,world.width), random.randint(0,world.height)
+#    while not posok(x, y, world.obstacles):
+#        x, y = random.randint(0,world.width), random.randint(0,world.height)
+#    appearance = animalGraphics['rabbit']
+#    newAnimal = Animal(x,y,appearance[0].get_width(),appearance[0].get_height(),appearance,'rabbit',5)
+#    world.animals.append(newAnimal)
+#    world.objectsofheight.append(newAnimal)
+#    world.interactives.append(newAnimal)
 
+# DrawScreen, but without the side-scrolling.
 def drawHuntScreen(screen,width,height,characterappearance,playerx,playery,borders,huntworld,ybaselist,time,night,health,currentmode,currentframe):
     ybaselist = getYbaselist(huntworld.objectsofheight) # Recalculate each time?  Oh well.
     leftx, topy = borders[0], borders[2]
