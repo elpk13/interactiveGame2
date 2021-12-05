@@ -214,16 +214,24 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
             direction += 2*math.pi
         while direction > 2*math.pi:
             direction -= 2*math.pi
-        if direction < math.pi/4: # Direction is counterclockwise from east.
-            return 0
-        elif direction < 3*math.pi/4:
-            return 3
-        elif direction < 5*math.pi/4:
-            return 1
-        elif direction < 7*math.pi/4:
-            return 2
+        if len(self.appearance[2]) > 0: # Not everyone gets up and down frames yet.
+            if direction < math.pi/4: # Direction is counterclockwise from east.
+                return 0
+            elif direction < 3*math.pi/4:
+                return 3
+            elif direction < 5*math.pi/4:
+                return 1
+            elif direction < 7*math.pi/4:
+                return 2
+            else:
+                return 0
         else:
-            return 0
+            if direction < math.pi/2:
+                return 0
+            elif direction < 3*math.pi/2:
+                return 1
+            else:
+                return 0
 
     def framepush(self):
         if self.currentframe == len(self.appearance[self.currentmode]) - 1:
@@ -248,11 +256,12 @@ class Animal(Interactive): # *Every* animal should be a member of a subclass.
 
 class Rabbit(Animal): # Animals' subclasses should - but do not yet - have unique
     def __init__(self,xpos,ypos,height,width,appearance): # move methods.
+        self.direction = 0
         super().__init__(xpos,ypos,height,width,appearance,'rabbit',20,10)
 
     def safe(self,obstacles,animals,direction): # For a rabbit, a direction is
-        newx = self.xpos + 4*self.speed*math.cos(direction) # acceptable if no
-        newy = self.ypos - 4*self.speed*math.sin(direction) # obstacles a jump away
+        newx = self.xpos + 4*self.speed*math.cos(self.direction) # acceptable if no
+        newy = self.ypos - 4*self.speed*math.sin(self.direction) # obstacles a jump away
         if not self.posok(newx,newy,obstacles): # and no non-rabbits in that
             return False                        # direction.
         for animal in animals:
@@ -266,25 +275,48 @@ class Rabbit(Animal): # Animals' subclasses should - but do not yet - have uniqu
         # Rabbits will bounce in random directions, never toward other animals
         # or into obstacles.  They change directions every time they cycle
         # through their frames.
-        if self.currentframe == len(self.appearance[self.currentmode]) - 1:
-            direction = random.random()*2*math.pi
+        if self.currentframe == 0:
+            self.direction = random.random()*2*math.pi
             attempts = 0
-            while not self.safe(obstacles,animals,direction) and attempts < 6:
-                direction = random.random()*2*math.pi
+            while not self.safe(obstacles,animals,self.direction) and attempts < 6:
+                self.direction = random.random()*2*math.pi
                 attempts += 1
             if attempts == 6:
-                direction = -1 # If rabbit cannot find safe direction, no motion.
-        if direction != -1:
-            self.xpos += self.speed*math.cos(direction)
-            self.ypos -= self.speed*math.sin(direction)
+                self.direction = -1 # If rabbit cannot find safe direction, no motion.
+        if self.direction != -1:
+            self.xpos += self.speed*math.cos(self.direction)
+            self.ypos -= self.speed*math.sin(self.direction)
             self.ybase = self.ypos + self.height
-            self.currentmode = self.orient(direction)
+            self.currentmode = self.orient(self.direction)
         self.framepush()
 
 class Deer(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):
         self.direction = 0
         super().__init__(xpos,ypos,height,width,appearance,'deer',40,30)
+
+    def move(self,obstacles,animals):
+        # Deer will continue in one direction, turning towards the center of the
+        # gap between predators to their left and right.
+        if len(animals) == 1:
+            self.direction = math.atan2(self.ypos-animals[0].ypos,animals[0].xpos-self.xpos) + math.pi
+        else:
+            directions_to_avoid = [self.direction]
+            for animal in animals:
+                if not isinstance(animal,Deer):
+                    directions_to_avoid.append(math.atan2(self.ypos-animal.ypos,animal.xpos-self.xpos))
+            directions_to_avoid.sort()
+            directions_to_avoid = [directions_to_avoid[-1] - 2*math.pi] + directions_to_avoid + [directions_to_avoid[0] + 2*math.pi]
+            point = directions_to_avoid.index(self.direction)
+            self.direction = ( directions_to_avoid[point-1] + directions_to_avoid[point+1] ) / 2
+
+        while not self.posok(self.xpos + self.speed*math.cos(self.direction), self.ypos - self.speed*math.cos(self.direction), obstacles):
+            self.direction -= 0.05
+        self.xpos += self.speed*math.cos(self.direction)
+        self.ypos -= self.speed*math.sin(self.direction)
+        self.ybase = self.ypos + self.height
+        self.currentmode = self.orient(self.direction)
+        self.framepush()
 
 class Bison(Animal):
     def __init__(self,xpos,ypos,height,width,appearance):

@@ -11,8 +11,13 @@ from dialog import bliterate
 def about_screen(screen):
 
     # Choose background colors and text colors.
-    BACKGROUND_COLOR = (0,0,0)
-    TEXT_COLOR = (200,200,200)
+    BACKGROUND_COLOR = (240,232,223)
+    TEXT_COLOR = (77,34,16)
+    # Also in the pallette used to draw wolves:
+    # (196, 190, 78)
+    # (98, 94, 77)
+    # (228, 228, 228)
+    # (135, 111, 91)
 
     # Open and read file of text to display.
     gameinfofile = open("about.txt","r")
@@ -26,7 +31,7 @@ def about_screen(screen):
 
     # Place the text of 'about.txt' within the rectangle.
     myfont = pygame.font.SysFont('constantia',24)
-    bliterate(screen,gameinfo,recleft,recwidth,recdown,height=recheight,buffer=20,font=myfont)
+    bliterate(screen,gameinfo,recleft,recwidth,recdown,height=recheight,buffer=20,font=myfont,color=TEXT_COLOR)
     # Bliterate function takes care of line and paragraph breaks.  See dialog.py.
 
     pygame.display.update()

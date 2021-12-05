@@ -45,7 +45,7 @@ def linebreak(text,width,maxheight=0,font=pygame.font.SysFont('constantia',24),c
 # Buffer here is used between lines and between block edges - the
 # dialog method has its own buffers.
 def bliterate(screen,text,x,y,width,height=0,justify=False,buffer=0,font=pygame.font.SysFont('constantia',24),color=(239,228,176)):
-    lines = linebreak(text,width-2*buffer,height-2*buffer,font)
+    lines = linebreak(text,width-2*buffer,height-2*buffer,font,color)
     widths = []
     if lines == False: # Display error for lines if word too wide or text too tall.
         screen.blit(font.render('Error',True,(255,0,0)),(x,y))
@@ -127,7 +127,7 @@ def akela(screen,text,options=[]):
     else:
         return dialog(screen,text,options,akelapic)
 
-def selfnote(screen,text,portrait):
+def selfnote(screen,text,portrait): # Usually portrait will be framelists[4]
     dialog(screen,'',[text],portrait)
 
 # Dialog test with long text.

@@ -220,22 +220,27 @@ def getWorldGraphics(window_height,worldx=0,worldy=0,bgname="Map_Background.png"
 
     miscellaneousGraphics, miscellaneousNightGraphics = getMiscellaneousGraphics()
 
-    def getAnimalGraphics(animalTypes):
+    def getAnimalGraphics(animalTypes,height):
         animalGraphics = { }
         for animal in animalTypes: # Iterate through the keys of dictionary animalTypes.
             framers = []
             framels = []
             frameus = []
             frameds = []
-            for frame in range(1,2):
-                framers.append(pygame.image.load(os.path.join('Animations','Animals',animal+'_right000'+str(frame)+'.png')))
+            for frame in range(1,5):
+                framer = pygame.image.load(os.path.join('Animations','Animals',animal+'_right000'+str(frame)+'.png'))
+                if animal == 'rabbit':
+                    framer = pygame.transform.scale(framer,(int(height*framer.get_width()/(18*framer.get_height())),int(height/18)))
+                elif animal == 'deer':
+                    framer = pygame.transform.scale(framer,(int(height*framer.get_width()/(6*framer.get_height())),int(height/6)))
+                framers.append(framer)
                 framels.append(pygame.transform.flip(framers[-1],True,False))
-                frameus.append(pygame.image.load(os.path.join('Animations','Animals',animal+'_up000'+str(frame)+'.png')))
-                frameds.append(pygame.image.load(os.path.join('Animations','Animals',animal+'_down000'+str(frame)+'.png')))
+                #frameus.append(pygame.image.load(os.path.join('Animations','Animals',animal+'_up000'+str(frame)+'.png')))
+                #frameds.append(pygame.image.load(os.path.join('Animations','Animals',animal+'_down000'+str(frame)+'.png')))
             animalGraphics[animal] = [framers,framels,frameus,frameds]
         return animalGraphics
 
-    animalGraphics = getAnimalGraphics(animalTypes)
+    animalGraphics = getAnimalGraphics(animalTypes,window_height)
 
     return worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, miscellaneousGraphics, miscellaneousNightGraphics, animalTypes, animalGraphics
 
