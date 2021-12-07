@@ -1,4 +1,4 @@
-# Chapter 1
+# Chapter 3
 # Featuring a young wolf who is new to the world.
 
 from worldgeneration import *
@@ -6,6 +6,7 @@ from gamethods import *
 import random
 import dialog
 import pygame
+import huntgame
 
 
 def run_third_chapter(screen, worldx, worldy, background, nightbackground, wolfGraphics, streamAppearancesByAim, streamNightAppearancesByAim, streamDimensionsByAim, streamCurveCoefficients, treeGraphics, treeNightGraphics, treeGreenness, rockGraphics, rockNightGraphics, decorGraphics, decorNightGraphics, decorDynamics, printGraphics, printGraphicsSmall, miscellaneousGraphics, miscellaneousNightGraphics, animalTypes, animalGraphics):
@@ -25,7 +26,6 @@ def run_third_chapter(screen, worldx, worldy, background, nightbackground, wolfG
     metpredator = False
     metignore = False
     metperson = False
-    packpopulation = 2
 
     playerx = random.randint(0,worldx)
     playery = random.randint(0,worldy)
@@ -41,9 +41,12 @@ def run_third_chapter(screen, worldx, worldy, background, nightbackground, wolfG
     timelapsed = 0
     night = False
     frame_time = globinfo['frame_time']
+    hunt = 0
 
     drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
-    dialog.akela(screen,"This is the third phase.")
+    dialog.akela(screen,"Congratulations on finding a pack!")
+    dialog.akela(screen,"Now that you've found your family, you can hunt with the pack again")
+    dialog.akela(screen,"You must keep your family fed for a year to keep your staus as pack leader")
 
     while inchapter:
         for event in pygame.event.get():
@@ -115,9 +118,18 @@ def run_third_chapter(screen, worldx, worldy, background, nightbackground, wolfG
                     else:
                         dialog.akela(screen,"Then let's go hunt together!")
                         metprey = True
+                        writeHealth(health)
+                        borders, huntworld = makeHuntWorld(chapterworld,playerx,playery,window_width,window_height,animal,animalGraphics,night,True,wolfGraphics,charname,3)
+                        huntgame.run_hunting_game(screen,borders,huntworld,timelapsed,night,framelists[5:],wolfGraphics,True)
+                        health = readHealth() 
+                        hunt += 1
                         # Connect the hunting mini-game here!!!!
                 elif animalTypes[animal] == 1:
                     metignore = True
+                elif isinstance(doesCol,Settlement): # Code for other interactives - like the den - go here.
+                    if not methuman and doesCol.human:
+                        dialog.akela(screen,"Be careful - humans live nearby.")
+                        methuman = True
                 else:
                     metpredator = True
                 doesCol.xpos = -1000
@@ -136,14 +148,14 @@ def run_third_chapter(screen, worldx, worldy, background, nightbackground, wolfG
         drawScreen(screen,window_width,window_height,framelists,playerx,playery,chapterworld,ybaselist,timelapsed,night,health,currentmode,currentframe)
         pygame.time.delay(frame_time)
         timelapsed += 1
-        if timelapsed == 20: # Should be 2400 ticks per year.  Set to 20 for testing.
+        if timelapsed == 2400: # Should be 2400 ticks per year.  Set to 20 for testing.
             inchapter = False
-            dialog.akela(screen,"Your pack did not reach population threshold.")
+            dialog.akela(screen,"Your pack left because they did not have enough food.")
             return 0
         elif timelapsed % 600 == 0:
             night = False
         elif timelapsed % 300 == 0:
             night = True
-        if packpopulation >= 7:
-            dialog.akela(screen,"Your pack has grown to victory threshold.")
+        if hunt >= 5:
+            dialog.akela(screen,"Your pack is well fed!")
             return 1
